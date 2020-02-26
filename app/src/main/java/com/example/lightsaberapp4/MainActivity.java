@@ -35,9 +35,10 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
     float[] geomagneticVals;
     float orientation[];
 
-    private boolean saberOn;
+    private boolean saberOn = false;
 
     private boolean hitSoundPlaying;
+    private boolean swingSoundPlaying;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,19 +93,38 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
         });
     }
 
+    private double prevAcc = 0;
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         double accMag = 0;
+        double accDirection = 0;
         if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             gravityVals = sensorEvent.values;
             accMag = Math.sqrt(Math.pow(sensorEvent.values[0], 2) + Math.pow(sensorEvent.values[1], 2) + Math.pow(sensorEvent.values[2], 2));
-            if (saberOn && accMag > 20 && !hitSoundPlaying) {
-                System.out.println(accMag);
-                soundPool.play(soundSwing, 0.5f, 0.5f, PRIORITY_LOW, PLAY_ONCE, RATE_NORMAL);
+            accDirection = sensorEvent.values[0] + sensorEvent.values[1] + sensorEvent.values[2];
+
+//            if (accDirection < 0 && accMag > prevAcc) {
+//                ((TextView) findViewById(R.id.accMag)).setText(accDirection + " | " + (accMag - prevAcc));
+//                prevAcc = accMag;
+//            }
+
+
+            if (saberOn && accMag - prevAcc > 30 && accMag > 25) {
+                soundPool.stop(soundSwing);
+                soundPool.play(soundHit, 0.5f, 0.5f, PRIORITY_LOW, PLAY_ONCE, RATE_NORMAL);
                 hitSoundPlaying = true;
-            } else
-                hitSoundPlaying = false;
+                ((TextView) findViewById(R.id.accMag)).setText("Crash\n" + accMag + " | " + (accMag - prevAcc));
+
+            }
+            else if (saberOn && accMag > 20 && !hitSoundPlaying) {
+                ((TextView) findViewById(R.id.accMag)).setText("Swing\n" + accMag + " | " + (accMag - prevAcc));
+
+                soundPool.play(soundSwing, 0.5f, 0.5f, PRIORITY_LOW, PLAY_ONCE, RATE_NORMAL);
+            }
         }
+
+        if (accMag < 10)
+            hitSoundPlaying = false;
 
         if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             geomagneticVals = sensorEvent.values;
@@ -117,8 +137,8 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
             SensorManager.getOrientation(R, orientation);
             //System.out.print(orientation[0] + " | " + orientation[1] + " | " + orientation[2]);
         }
-        if (orientation != null)
-            ((TextView) findViewById(R.id.accMag)).setText(Math.toDegrees(orientation[0]) + " | " + Math.toDegrees(orientation[1]) + " | " + Math.toDegrees(orientation[2]));
+//        if (orientation != null)
+//            ((TextView) findViewById(R.id.accMag)).setText(Math.toDegrees(orientation[0]) + " | " + Math.toDegrees(orientation[1]) + " | " + Math.toDegrees(orientation[2]));
     }
 
     @Override

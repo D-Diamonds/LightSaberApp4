@@ -45,6 +45,10 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // the priority is supposed to determine what sound plays over another but the api says this is for future implementations
+        // the priority does work in the current version of android
+        // another issue is that due to this some sounds will play multiple times because there is no way to determine when
+        // a sound has finished playing
         soundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
         soundPool.setOnLoadCompleteListener(this);
         soundSwing = soundPool.load(this, R.raw.saberswing, 1);
@@ -71,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
         findViewById(R.id.enable).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // The saber turns on and off based on orientation... refere to onSensorChanged() for further detail
                 if (!saberOn && orientation != null && Math.toDegrees(orientation[1]) < -70) {
                     soundPool.play(soundOn, 0.5f, 0.5f, PRIORITY_LOW, PLAY_ONCE, RATE_NORMAL);
                     saberOn = true;
@@ -98,6 +103,8 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
     public void onSensorChanged(SensorEvent sensorEvent) {
         double accMag = 0;
         double accDirection = 0;
+        // This part gets the device's current acceleration... if it has a high enough magnitude and jerk it should make a crash sound...
+        // if it only has a high enough magnitude it will make a swing noise
         if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             gravityVals = sensorEvent.values;
             accMag = Math.sqrt(Math.pow(sensorEvent.values[0], 2) + Math.pow(sensorEvent.values[1], 2) + Math.pow(sensorEvent.values[2], 2));
@@ -126,6 +133,8 @@ public class MainActivity extends AppCompatActivity implements SoundPool.OnLoadC
         if (accMag < 10)
             hitSoundPlaying = false;
 
+        // the magnetic field sensor is important for getting the device's orientation
+        // the api uses the gravitational acceleration matrix and magnetic field matrix to determine this
         if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             geomagneticVals = sensorEvent.values;
         }
